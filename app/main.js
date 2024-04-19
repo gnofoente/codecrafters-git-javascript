@@ -1,17 +1,40 @@
-const fs = require("fs");
+const { mkdirSync, writeFileSync } = require("node:fs");
+const { readFile } = require("node:fs/promises");
 const path = require("path");
+const zlib = require("node:zlib");
+const util = require("node:util");
+const { error } = require("node:console");
 
 // You can use print statements as follows for debugging, they'll be visible when running tests.
 console.log("Logs from your program will appear here!");
 
+const inflate = util.promisify(zlib.inflate);
+
 const COMMANDS = {
   'init': () => {
-    fs.mkdirSync(path.join(__dirname, ".git"), { recursive: true});
-    fs.mkdirSync(path.join(__dirname, ".git", "objects"), { recursive: true});
-    fs.mkdirSync(path.join(__dirname, ".git", "refs"), { recursive: true});
+    mkdirSync(path.join(__dirname, ".git"), { recursive: true});
+    mkdirSync(path.join(__dirname, ".git", "objects"), { recursive: true});
+    mkdirSync(path.join(__dirname, ".git", "refs"), { recursive: true});
 
-    fs.writeFileSync(path.join(__dirname, ".git", "HEAD"), "ref: refs/heads/main\n");
+    writeFileSync(path.join(__dirname, ".git", "HEAD"), "ref: refs/heads/main\n");
     console.log("Initialized git directory");
+  },
+  'cat-file': () => {
+    const hash = process.argv[4];
+    const hashAsArray = hash.split('');
+    const dir = hashAsArray.slice(0, 2).join('');
+    const fileName = hashAsArray.slice(2).join('');
+
+    readFile(`./.git/objects/${dir}/${fileName}`)
+    .then((buffer) => {
+      return inflate(buffer)
+    })
+    .then(buffer => {
+      console.log(buffer.toString('utf-8'));
+    })
+    .catch((reason) => {
+      throw reason;
+    })
   }
 }
 
