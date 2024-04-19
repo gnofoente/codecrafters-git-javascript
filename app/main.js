@@ -5,9 +5,6 @@ const zlib = require("node:zlib");
 const util = require("node:util");
 const { error } = require("node:console");
 
-// You can use print statements as follows for debugging, they'll be visible when running tests.
-console.log("Logs from your program will appear here!");
-
 const inflate = util.promisify(zlib.inflate);
 
 const COMMANDS = {
