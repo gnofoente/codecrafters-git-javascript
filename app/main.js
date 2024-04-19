@@ -29,7 +29,7 @@ const COMMANDS = {
     .then(buffer => {
       const str = buffer.toString('utf-8');
       const [header, fileContent] = str.split('\x00');
-      console.log(fileContent);
+      console.log(fileContent.replace('\n', ''));
     })
     .catch((reason) => {
       throw reason;
