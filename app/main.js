@@ -30,7 +30,9 @@ const COMMANDS = {
       return inflate(buffer)
     })
     .then(buffer => {
-      console.log(buffer.toString('utf-8'));
+      const str = buffer.toString('utf-8');
+      const [header, fileContent] = str.split('\x00');
+      console.log(fileContent);
     })
     .catch((reason) => {
       throw reason;
