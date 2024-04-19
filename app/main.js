@@ -3,7 +3,7 @@ const { readFile } = require("node:fs/promises");
 const path = require("path");
 const zlib = require("node:zlib");
 const util = require("node:util");
-const { error } = require("node:console");
+const process = require("node:process");
 
 const inflate = util.promisify(zlib.inflate);
 
@@ -29,7 +29,7 @@ const COMMANDS = {
     .then(buffer => {
       const str = buffer.toString('utf-8');
       const [header, fileContent] = str.split('\x00');
-      console.log(fileContent.replace('\n', ''));
+      process.stdout.write(fileContent);
     })
     .catch((reason) => {
       throw reason;
