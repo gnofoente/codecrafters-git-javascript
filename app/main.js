@@ -4,8 +4,10 @@ const path = require("path");
 const zlib = require("node:zlib");
 const util = require("node:util");
 const process = require("node:process");
+const crypto = require("node:crypto");
 
 const inflate = util.promisify(zlib.inflate);
+const deflate = util.promisify(zlib.deflate);
 
 const COMMANDS = {
   'init': () => {
@@ -16,6 +18,7 @@ const COMMANDS = {
     writeFileSync(path.join(__dirname, ".git", "HEAD"), "ref: refs/heads/main\n");
     console.log("Initialized git directory");
   },
+
   'cat-file': () => {
     const hash = process.argv[4];
     const hashAsArray = hash.split('');
@@ -23,7 +26,7 @@ const COMMANDS = {
     const fileName = hashAsArray.slice(2).join('');
 
     readFile(`./.git/objects/${dir}/${fileName}`)
-    .then((buffer) => {
+    .then(buffer => {
       return inflate(buffer)
     })
     .then(buffer => {
@@ -31,9 +34,35 @@ const COMMANDS = {
       const [header, fileContent] = str.split('\x00');
       process.stdout.write(fileContent);
     })
-    .catch((reason) => {
-      throw reason;
-    })
+    .catch(reason => { throw reason; })
+  },
+
+  'hash-object': () => {
+    const shouldWrite = process.argv.includes('-w');
+    const fileToHash = process.argv[4];
+
+    readFile(`./${fileToHash}`)
+    .then(buffer => {
+      const fileContents = buffer.toString('utf-8');
+      const hash = crypto.createHash('sha1');
+      const object = `blob ${fileContents.length}\0${fileContents}`;
+
+      hash.update(object);
+      const objectHash = hash.digest('hex');
+
+      const dir = objectHash.slice(0, 2);
+      const fileName = objectHash.slice(2);
+
+      const objPath = path.join(__dirname, '.git', 'objects');
+
+      mkdirSync(path.join(objPath, dir));
+
+      zlib.deflate(object, (error, result) => {
+        if (error) throw error;
+        writeFileSync(path.join(objPath, dir, fileName), result);
+        process.stdout.write(objectHash);
+      });
+    });
   }
 }
 
