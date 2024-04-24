@@ -7,7 +7,6 @@ const process = require("node:process");
 const crypto = require("node:crypto");
 
 const inflate = util.promisify(zlib.inflate);
-const deflate = util.promisify(zlib.deflate);
 
 const COMMANDS = {
   'init': () => {
