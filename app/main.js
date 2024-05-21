@@ -24,7 +24,14 @@ const COMMANDS = {
     const dir = hashAsArray.slice(0, 2).join('');
     const fileName = hashAsArray.slice(2).join('');
 
-    readFile(`./.git/objects/${dir}/${fileName}`)
+    const filePath = path.join(
+      ".git",
+      "objects",
+      dir,
+      fileName
+    );
+
+    readFile(filePath)
     .then(buffer => {
       return inflate(buffer)
     })
@@ -40,18 +47,17 @@ const COMMANDS = {
     const shouldWrite = process.argv.includes('-w');
     const fileToHash = process.argv[4];
 
-    readFile(`./${fileToHash}`)
+    readFile(path.join(fileToHash))
     .then(buffer => {
       const fileContents = buffer.toString('utf-8');
       const hash = crypto.createHash('sha1');
       const object = `blob ${fileContents.length}\0${fileContents}`;
 
       hash.update(object);
-      const objectHash = hash.digest('hex');
 
+      const objectHash = hash.digest('hex');
       const dir = objectHash.slice(0, 2);
       const fileName = objectHash.slice(2);
-
       const objPath = path.join(__dirname, '.git', 'objects');
 
       mkdirSync(path.join(objPath, dir));
@@ -62,6 +68,34 @@ const COMMANDS = {
         process.stdout.write(objectHash);
       });
     });
+  },
+
+  'ls-tree': () => {
+    // get the tree SHA from command args
+    const treeSHA = process.argv[4];
+
+    // try to find a git object file with the specified SHA
+    const treeDirName = treeSHA.slice(0, 2);
+    const treeFileName = treeSHA.slice(2);
+    const filePath = path.join(
+      __dirname, 
+      ".git", 
+      "objects", 
+      treeDirName,
+      treeFileName
+    );
+
+    // open the git object file
+    readFile(filePath)
+    .then(buffer => {
+      return inflate(buffer);
+    })
+    .then(buffer => {
+      // get all objects inside the tree file
+      // print the objects' names to stdout
+      console.log(getTreeStructureFromBuffer(buffer));
+    })
+    .catch(reason => { throw reason; });
   }
 }
 
@@ -70,3 +104,20 @@ let onCommand = COMMANDS[command];
 if (!onCommand) throw new Error(`Invalid command ${command}`);
 onCommand();
 
+function getTreeStructureFromBuffer(buffer) {
+  const firstNullByteIndex = buffer.indexOf('\x00');
+  const bufferWithoutHeader = buffer.slice(firstNullByteIndex + 1);
+  const str = bufferWithoutHeader.toString('utf-8');
+  let lines = str.split(/([0-9]{5,6})/);
+  lines = lines
+    .filter(line => {
+      return line.startsWith(' ');
+    })
+    .map(line => {
+      const nullByteIndex = line.indexOf('\x00'); 
+      const name = line.slice(0, nullByteIndex).trim();
+      return name;
+    })
+    .join('\n');
+  return lines;
+}
