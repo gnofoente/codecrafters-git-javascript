@@ -112,6 +112,37 @@ const COMMANDS = {
   'write-tree': () => {
     const treeHash = writeTree(__dirname);
     process.stdout.write(treeHash);
+  },
+
+  'commit-tree': () => {
+    const treeSHA = process.argv[3];
+    const parentCommitSHA = process.argv.slice(process.argv.indexOf('-p'), process.argv.indexOf('-p')+2)[1];
+    const message = process.argv.slice(process.argv.indexOf('-m'), process.argv.indexOf('-m')+2)[1];
+
+    const commitContentBuffer = Buffer.concat([
+      Buffer.from(`tree ${treeSHA}\n`),
+      Buffer.from(`parent ${parentCommitSHA}\n`),
+      Buffer.from(`author The Commiter <thecommitter@test.com> ${Date.now} +0000\n`),
+      Buffer.from(`commiter The Commiter <thecommitter@test.com> ${Date.now} +0000\n\n`),
+      Buffer.from(`${message}\n`)
+    ]);
+
+    const commitBuffer = Buffer.concat([
+      Buffer.from(`commit ${commitContentBuffer.length}\0`),
+      commitContentBuffer
+    ]);
+
+    const commitHash = generateHash(commitBuffer);
+    const compressedCommit = zlib.deflateSync(commitBuffer);
+    
+    const dir = commitHash.slice(0, 2);
+    const fileName = commitHash.slice(2);
+    const commitDir = path.resolve(__dirname, '.git', 'objects', dir);
+    
+    mkdirSync(commitDir, { recursive: true });
+    writeFileSync(path.resolve(commitDir, fileName), compressedCommit);
+    
+    process.stdout.write(commitHash);
   }
 }
 
