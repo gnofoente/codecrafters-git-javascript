@@ -139,9 +139,7 @@ function getTreeStructureFromBuffer(buffer) {
 }
 
 function writeTree(directoryPath) {
-  const directoryName = path.basename(directoryPath);
   const entries = readdirSync(directoryPath, { withFileTypes: true }).filter(entry => !IGNORE.includes(entry.name));
-  console.log('READING ', directoryPath);
 
   const treeEntries = [];
 
@@ -187,7 +185,6 @@ function writeTree(directoryPath) {
 }
 
 function writeFileObject(filePath) {
-  console.log(entry);
   const fileContents = readFileSync(filePath, { encoding: 'utf-8' });
   const blobContent = `blob ${fileContents.length}\0${fileContents}`;
   const hash = generateHash(blobContent);
