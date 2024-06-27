@@ -10,6 +10,7 @@ const zlib = require("node:zlib");
 const util = require("node:util");
 const process = require("node:process");
 const crypto = require("node:crypto");
+const https = require("node:https");
 
 const inflate = util.promisify(zlib.inflate);
 
@@ -143,6 +144,36 @@ const COMMANDS = {
     writeFileSync(path.resolve(commitDir, fileName), compressedCommit);
     
     process.stdout.write(commitHash);
+  },
+
+  'clone': () => {
+    const repositoryURL = process.argv[3];
+    const dir = process.argv[4];
+    console.log(`CLONING ${repositoryURL} into ${dir}`);
+    const options = {
+      method: 'GET',
+      // headers: {
+      //   'User-Agent': 'PostmanRuntime/7.39.0',
+      //   'Accept': '*/*',
+      //   'Accept-Encoding': 'gzip, deflate, br',
+      //   'Connection': 'keep-alive',
+      //   'Content-Type': 'application/x-git-upload-pack-request'
+      // }
+    };
+
+    const req = https.request(`${repositoryURL}/info/refs?service=git-upload-pack`, options, (res) => {
+      res.on("data", (data) => {
+        console.log(data.toString('utf-8'));
+      });
+    });
+
+    console.log(req);
+
+    req.on("error", (e) => {
+      console.log(e);
+    });
+
+    req.end();
   }
 }
 
