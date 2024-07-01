@@ -148,17 +148,11 @@ const COMMANDS = {
 
   'clone': () => {
     const repositoryURL = process.argv[3];
-    const dir = process.argv[4];
+    const dir = process.argv[4] || __dirname;
+
     console.log(`CLONING ${repositoryURL} into ${dir}`);
     const options = {
-      method: 'GET',
-      // headers: {
-      //   'User-Agent': 'PostmanRuntime/7.39.0',
-      //   'Accept': '*/*',
-      //   'Accept-Encoding': 'gzip, deflate, br',
-      //   'Connection': 'keep-alive',
-      //   'Content-Type': 'application/x-git-upload-pack-request'
-      // }
+      method: 'GET'
     };
 
     const req = https.request(`${repositoryURL}/info/refs?service=git-upload-pack`, options, (res) => {
@@ -166,8 +160,6 @@ const COMMANDS = {
         console.log(data.toString('utf-8'));
       });
     });
-
-    console.log(req);
 
     req.on("error", (e) => {
       console.log(e);
